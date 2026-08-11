@@ -4,6 +4,7 @@
 #include <memory>
 #include "WinsockInit.h"
 #include "ListenSocket.h"
+#include "Config.h"
 using namespace std;
  
 int main()
@@ -16,6 +17,9 @@ int main()
 
     unique_ptr<ListenSocket> listenSocket = ListenSocket::Create();
     if (!listenSocket)
+        return 1;
+
+    if (!listenSocket->Bind(SERVER_PORT))
         return 1;
 
     return 0;
