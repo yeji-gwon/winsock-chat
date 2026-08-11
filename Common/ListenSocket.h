@@ -43,6 +43,17 @@ public:
 		return true;
 	}
 
+	// 소켓을 접속 대기 상태로 전환 (backlog는 기본값 SOMAXCONN 사용)
+	bool Listen(int backlog = SOMAXCONN) {
+		if (SOCKET_ERROR == listen(m_sock, backlog))
+		{
+			std::cout << "listen() failed, error code : " << WSAGetLastError() << "\n";
+			return false;
+		}
+
+		return true;
+	}
+
 private:
 	ListenSocket(SOCKET sock) : m_sock(sock) {}
 
