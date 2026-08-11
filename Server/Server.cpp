@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include "WinsockInit.h"
+#include "ListenSocket.h"
 using namespace std;
  
 int main()
@@ -11,6 +12,10 @@ int main()
 
     unique_ptr<WinsockInit> winsockInit = WinsockInit::Create();
     if (!winsockInit)
+        return 1;
+
+    unique_ptr<ListenSocket> listenSocket = ListenSocket::Create();
+    if (!listenSocket)
         return 1;
 
     return 0;
