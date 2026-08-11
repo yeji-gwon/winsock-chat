@@ -20,7 +20,21 @@ public:
 		return std::unique_ptr<ClientSocket>(new ClientSocket(sock));
 	}
 	
-	SOCKET Get() const { return m_sock;	}
+	int Recv(char* buffer, int len) {
+		int result = recv(m_sock, buffer, len, 0);
+		if (SOCKET_ERROR == result)
+			std::cout << "recv() failed, Error code : " << WSAGetLastError() << "\n";
+
+		return result;
+	}
+
+	int Send(const char* buffer, int len) {
+		int result = send(m_sock, buffer, len, 0);
+		if (SOCKET_ERROR == result)
+			std::cout << "send() failed, Error code : " << WSAGetLastError() << "\n";
+
+		return result;
+	}
 
 private:
 	ClientSocket(SOCKET sock) : m_sock(sock) {}
