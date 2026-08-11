@@ -29,9 +29,12 @@ int main()
     if (!listenSocket->Listen())
         return 1;
 
+    cout << "클라이언트 접속 기다리는 중...\n";
     auto client = listenSocket->Accept();
     if (!client)
         return 1;
+
+    cout << "클라이언트 접속\n";
 
     return 0;
 }
