@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <WinSock2.h>
+#include "ClientSocket.h"
 #pragma comment(lib, "Ws2_32.lib")
 
 // TCP 리스닝 소켓을 RAII로 관리하는 클래스.
@@ -52,6 +53,19 @@ public:
 		}
 
 		return true;
+	}
+
+	std::unique_ptr<ClientSocket> Accept() {
+		SOCKADDR_IN clientAddr = {};
+		int addrLen = sizeof(clientAddr);
+		SOCKET client = accept(m_sock, reinterpret_cast<SOCKADDR*>(&clientAddr), &addrLen);
+		if (INVALID_SOCKET == client)
+		{
+			std::cout << "accept() failed, error code : " << WSAGetLastError() << "\n";
+			return nullptr;
+		}
+
+		return ClientSocket::Create(client);
 	}
 
 private:

@@ -29,5 +29,9 @@ int main()
     if (!listenSocket->Listen())
         return 1;
 
+    auto client = listenSocket->Accept();
+    if (!client)
+        return 1;
+
     return 0;
 }
