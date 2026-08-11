@@ -8,7 +8,7 @@
 
 class ConnectSocket {
 public:
-	~ConnectSocket() { closesocket(m_sock); }
+	~ConnectSocket() { if(INVALID_SOCKET != m_sock) closesocket(m_sock); }
 
 	// 소켓 핸들은 복사되면 이중 close 문제가 생기므로 복사 금지.
 	ConnectSocket(const ConnectSocket&) = delete;
@@ -44,6 +44,13 @@ public:
 		}
 
 		return true;
+	}
+
+	// 소켓 소유권을 포기하고 값만 반환. 이후 소멸자는 close를 호출하지 않음.
+	SOCKET Release() {
+		SOCKET sock = m_sock;
+		m_sock = INVALID_SOCKET;
+		return sock;
 	}
 
 private:
