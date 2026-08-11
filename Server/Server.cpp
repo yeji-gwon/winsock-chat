@@ -36,15 +36,20 @@ int main()
         return 1;
     cout << "클라이언트 접속\n";
 
-    // 클라이언트로부터 메시지 수신 후 그대로 반환 (echo)
-    char buffer[512] = {};
-    int received = client->Recv(buffer, sizeof(buffer) - 1);
-    if (received > 0)
+    while (true)
     {
+        // 클라이언트로부터 메시지 수신 후 그대로 반환 (echo)
+        char buffer[512] = {};
+        int received = client->Recv(buffer, sizeof(buffer) - 1);
+
+        if (received <= 0)
+            break;
+
         buffer[received] = '\0';
         cout << "받은 메시지 : " << buffer << "\n";
         client->Send(buffer, received);
     }
+     
 
     return 0;
 }
