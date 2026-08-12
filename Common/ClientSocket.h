@@ -36,6 +36,10 @@ public:
 		return result;
 	}
 
+	void Shutdown() {
+		shutdown(m_sock, SD_BOTH);
+	}
+
 private:
 	ClientSocket(SOCKET sock) : m_sock(sock) {}
 
