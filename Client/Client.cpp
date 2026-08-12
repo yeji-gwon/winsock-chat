@@ -3,11 +3,17 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
+#include <atomic>
 #include "WinsockInit.h"
 #include "ConnectSocket.h"
 #include "ClientSocket.h"
 #include "Config.h" 
 using namespace std;
+
+atomic<bool> running = true;
+
+void RecvLoop(ClientSocket* client);
 
 int main()
 {
@@ -31,27 +37,47 @@ int main()
     // 연결된 소켓의 소유권을 ClientSocket으로 이전 (이후 recv/send 담당)
     auto client = ClientSocket::Create(connectSocket->Release());
 
-    while (true)
+    thread recvThread(RecvLoop, client.get());
+
+    while (running)
     {
-        // 메시지 입력받아 서버로 전송
+        // 메시지 입력
         string msg;
         cout << "보낼 메시지 입력 (/quit 종료) : ";
         getline(cin, msg);
 
-        if (msg == "/quit")
+        if (!running)
             break;
 
-        client->Send(msg.c_str(), static_cast<int>(msg.length()));
+        if (msg == "/quit")
+        {
+            running = false;
+            break;
+        } 
 
-        // 서버로부터 응답 수신
+        client->Send(msg.c_str(), static_cast<int>(msg.length()));
+    }
+
+    client->Shutdown();
+    recvThread.join();
+
+    return 0;
+}
+
+void RecvLoop(ClientSocket* client)
+{
+    while (running)
+    {
         char buffer[512] = {};
         int received = client->Recv(buffer, sizeof(buffer) - 1);
         if (received <= 0)
+        {
+            cout << "\n서버와 연결이 종료되었습니다.\n";
+            running = false;
             break;
+        } 
 
         buffer[received] = '\0';
         cout << "서버로부터 받은 메시지 : " << buffer << "\n";
     }
-
-    return 0;
 }
