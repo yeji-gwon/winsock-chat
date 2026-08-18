@@ -10,7 +10,7 @@
 
 class ListenSocket {
 public:
-	~ListenSocket() { closesocket(m_sock); }
+	~ListenSocket() { Close(); }
 
 	// 소켓 핸들은 복사되면 이중 close 문제가 생기므로 복사 금지.
 	ListenSocket(const ListenSocket&) = delete;
@@ -55,7 +55,7 @@ public:
 		return true;
 	}
 
-	std::unique_ptr<ClientSocket> Accept() {
+	std::shared_ptr<ClientSocket> Accept() {
 		SOCKADDR_IN clientAddr = {};
 		int addrLen = sizeof(clientAddr);
 		SOCKET client = accept(m_sock, reinterpret_cast<SOCKADDR*>(&clientAddr), &addrLen);
@@ -66,6 +66,14 @@ public:
 		}
 
 		return ClientSocket::Create(client);
+	}
+
+	void Close() {
+		if (m_sock != INVALID_SOCKET)
+		{
+			closesocket(m_sock);
+			m_sock = INVALID_SOCKET;
+		}
 	}
 
 private:
