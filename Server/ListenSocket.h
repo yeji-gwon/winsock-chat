@@ -10,7 +10,7 @@
 
 class ListenSocket {
 public:
-	~ListenSocket() { closesocket(m_sock); }
+	~ListenSocket() { Close(); }
 
 	// 소켓 핸들은 복사되면 이중 close 문제가 생기므로 복사 금지.
 	ListenSocket(const ListenSocket&) = delete;
@@ -66,6 +66,14 @@ public:
 		}
 
 		return ClientSocket::Create(client);
+	}
+
+	void Close() {
+		if (m_sock != INVALID_SOCKET)
+		{
+			closesocket(m_sock);
+			m_sock = INVALID_SOCKET;
+		}
 	}
 
 private:

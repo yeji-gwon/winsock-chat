@@ -14,7 +14,7 @@ void AcceptLoop(const unique_ptr<ListenSocket>& listenSocket);
 void AddClient(int id, shared_ptr<ClientSocket> clientSocket, const string& nickname);
 void RemoveClient(int id);
 size_t GetClientCount();
-void BroadCast(const string& msg, int excludeId);
+void BroadCast(const string& msg, int excludeId = -1);
 void HandleClient(shared_ptr<ClientSocket> clientSocket);
 
 int main()
@@ -39,8 +39,48 @@ int main()
     if (!listenSocket->Listen())
         return 1;
 
+    std::cout << "===================================================" << std::endl;
+    std::cout << " 1:N 채팅 서버가 시작되었습니다. (포트: " << SERVER_PORT << ")" << std::endl;
+    std::cout << " 콘솔에 문구를 입력하면 모든 클라이언트에게 공지로 전송됩니다." << std::endl;
+    std::cout << " 접속자 목록 확인: /list   |   서버 종료: /quit" << std::endl;
+    std::cout << "===================================================" << std::endl;
+
     thread acceptThread(AcceptLoop, ref(listenSocket));
 
+    string line;
+    while (getline(cin, line))
+    {
+        if (line == "/quit")
+        {
+            g_running = false;
+            BroadCast("[공지] 서버가 종료됩니다.");
+            break;
+        }
+        else if (line == "/list")
+        {
+            lock_guard<mutex> lock(g_clientMutex);
+            LogMessage("-- 현재 접속자 (" + to_string(GetClientCount()) + "명) -- ");
+            for (const auto& client : g_clients)
+                LogMessage(client.nickname);
+
+            continue;
+        }
+        else if (line.empty())
+            continue;
+
+        string noticeMsg = "[공지] " + line + "\n";
+        BroadCast(noticeMsg);
+        LogMessage("[공지 전송] " + noticeMsg);
+    }
+
+    {
+        lock_guard<mutex> lock(g_clientMutex);
+        for (auto& client : g_clients)
+            client.socket->Shutdown();
+
+        g_clients.clear();
+    }
+    listenSocket->Close();
     acceptThread.join();
 
     return 0;
@@ -63,9 +103,6 @@ void AcceptLoop(const unique_ptr<ListenSocket>& listenSocket)
             cout << "[서버] accept 실패 : \n";
             break;
         } 
-
-        cout << "[서버] 클라이언트 접속\n";
-
         thread(HandleClient, clientSocket).detach();
     }
 }
@@ -141,7 +178,7 @@ void HandleClient(shared_ptr<ClientSocket> clientSocket)
         LogMessage("[" + nickname + "] " + msg);
 
         // 클라이언트 메시지를 보낸 사람 제외한 모두에게 전달
-        string chatMsg = "[nickname] " + msg + "\n"; 
+        string chatMsg = "[" + nickname + "] " + msg + "\n"; 
         BroadCast(joinMsg, id);
     }
 
