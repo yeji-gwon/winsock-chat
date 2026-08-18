@@ -55,7 +55,7 @@ public:
 		return true;
 	}
 
-	std::unique_ptr<ClientSocket> Accept() {
+	std::shared_ptr<ClientSocket> Accept() {
 		SOCKADDR_IN clientAddr = {};
 		int addrLen = sizeof(clientAddr);
 		SOCKET client = accept(m_sock, reinterpret_cast<SOCKADDR*>(&clientAddr), &addrLen);
