@@ -3,6 +3,7 @@
 #include <crtdbg.h>
 #include <iostream>
 #include <memory>
+#include <thread>
 #include "WinsockInit.h"
 #include "ListenSocket.h"
 #include "Config.h"
@@ -10,6 +11,8 @@
 using namespace std;
 
 bool running = true;
+
+void AcceptLoop(const unique_ptr<ListenSocket>& listenSocket);
 
 int main()
 {
@@ -20,30 +23,39 @@ int main()
     if (!winsockInit)
         return 1;
     
-    // 소켓 생성
+    // Listen 소켓 생성
     unique_ptr<ListenSocket> listenSocket = ListenSocket::Create();
     if (!listenSocket)
         return 1;
 
-    // 소켓 바인딩. IP 주소, 포트 번호 할당
+    // Listen 소켓 바인딩. IP 주소, 포트 번호 할당
     if (!listenSocket->Bind(SERVER_PORT))
         return 1;
     
-    // 소켓을 접속 대기 상태로 전환.
+    // Listen 소켓을 접속 대기 상태로 전환.
     if (!listenSocket->Listen())
         return 1;
 
-    // 클라이언트 접속 대기 및 수락
-    cout << "클라이언트 접속 기다리는 중...\n";
+    thread acceptThread(AcceptLoop, ref(listenSocket));
 
+    acceptThread.join();
+
+    return 0;
+}
+
+void AcceptLoop(const unique_ptr<ListenSocket>& listenSocket)
+{
     while (running)
     {
         auto client = listenSocket->Accept();
 
         if (!client)
+        {
+            cout << "[서버] accept 실패 : \n";
             break;
+        } 
 
-        cout << "클라이언트 접속\n";
+        cout << "[서버] 클라이언트 접속\n";
 
         while (true)
         {
@@ -59,6 +71,4 @@ int main()
             client->Send(buffer, received);
         }
     }
-
-    return 0;
 }
