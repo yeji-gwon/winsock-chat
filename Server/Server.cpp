@@ -1,12 +1,16 @@
 ﻿#define _CRTDBG_MAP_ALLOC
+
 #include <crtdbg.h>
 #include <iostream>
 #include <memory>
 #include "WinsockInit.h"
 #include "ListenSocket.h"
 #include "Config.h"
+
 using namespace std;
- 
+
+bool running = true;
+
 int main()
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -31,25 +35,30 @@ int main()
 
     // 클라이언트 접속 대기 및 수락
     cout << "클라이언트 접속 기다리는 중...\n";
-    auto client = listenSocket->Accept();
-    if (!client)
-        return 1;
-    cout << "클라이언트 접속\n";
 
-    while (true)
+    while (running)
     {
-        // 클라이언트로부터 메시지 수신 후 그대로 반환 (echo)
-        char buffer[512] = {};
-        int received = client->Recv(buffer, sizeof(buffer) - 1);
+        auto client = listenSocket->Accept();
 
-        if (received <= 0)
+        if (!client)
             break;
 
-        buffer[received] = '\0';
-        cout << "받은 메시지 : " << buffer << "\n";
-        client->Send(buffer, received);
+        cout << "클라이언트 접속\n";
+
+        while (true)
+        {
+            // 클라이언트로부터 메시지 수신 후 그대로 반환 (echo)
+            char buffer[512] = {};
+            int received = client->Recv(buffer, sizeof(buffer) - 1);
+
+            if (received <= 0)
+                break;
+
+            buffer[received] = '\0';
+            cout << "받은 메시지 : " << buffer << "\n";
+            client->Send(buffer, received);
+        }
     }
-     
 
     return 0;
 }
