@@ -14,6 +14,7 @@ void AcceptLoop(const unique_ptr<ListenSocket>& listenSocket);
 void AddClient(int id, shared_ptr<ClientSocket> clientSocket, const string& nickname);
 void RemoveClient(int id);
 size_t GetClientCount();
+void BroadCast(const string& msg, int excludeId);
 void HandleClient(shared_ptr<ClientSocket> clientSocket);
 
 int main()
@@ -88,6 +89,18 @@ size_t GetClientCount()
     return g_clients.size();
 }
 
+void BroadCast(const string& msg, int excludeId)
+{
+    lock_guard<mutex> lock(g_clientMutex);
+    for (const auto& client : g_clients)
+    {
+        if (client.id == excludeId)
+            continue;
+
+        client.socket->Send(msg.c_str(), static_cast<int>(msg.size()));
+    }
+}
+
 void HandleClient(shared_ptr<ClientSocket> clientSocket)
 {
     char buffer[BUF_SIZE];
@@ -105,7 +118,14 @@ void HandleClient(shared_ptr<ClientSocket> clientSocket)
     int id = g_nextClientId++;
     AddClient(id, clientSocket, nickname);
 
-    LogMessage("[서버] " + nickname + "님이 입장했습니다. (현재 접속자 수 : " + to_string(GetClientCount()) + "명)");
+    string clientCount = to_string(GetClientCount());
+    LogMessage("[서버] " + nickname + "님이 입장했습니다. (현재 접속자 수 : " + clientCount + "명)");
+
+    string welcome = "[서버] " + nickname + "님, 환영합니다. (현재 접속자 수 : " + clientCount + "명)";
+    clientSocket->Send(welcome.c_str(), static_cast<int>(welcome.size()));
+
+    string joinMsg = "[알림] " + nickname + "님이 입장했습니다. (현재 접속자 수 : " + clientCount + "명)";
+    BroadCast(joinMsg, id);
 
     while (g_running)
     { 
@@ -121,9 +141,15 @@ void HandleClient(shared_ptr<ClientSocket> clientSocket)
         LogMessage("[" + nickname + "] " + msg);
 
         // 클라이언트 메시지를 보낸 사람 제외한 모두에게 전달
-        //string chatMsg = "[nickname] " + msg + "\n"; 
+        string chatMsg = "[nickname] " + msg + "\n"; 
+        BroadCast(joinMsg, id);
     }
 
     RemoveClient(id);
-    LogMessage("[서버] " + nickname + "님이 퇴장했습니다. (현재 접속자 수 : " + to_string(GetClientCount()) + "명)");
+
+    clientCount = to_string(GetClientCount());
+    LogMessage("[서버] " + nickname + "님이 퇴장했습니다. (현재 접속자 수 : " + clientCount + "명)");
+
+    string exitMsg = "[알림] " + nickname + "님이 퇴장했습니다. (현재 접속자 수 : " + clientCount + "명)";
+    BroadCast(exitMsg, id);
 }
