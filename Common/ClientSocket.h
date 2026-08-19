@@ -9,7 +9,7 @@
 
 class ClientSocket {
 public:
-	~ClientSocket() { closesocket(m_sock); }
+	~ClientSocket() { Close(); }
 
 	// 소켓 핸들은 복사되면 이중 close 문제가 생기므로 복사 금지.
 	ClientSocket(const ClientSocket&) = delete;
@@ -38,6 +38,14 @@ public:
 
 	void Shutdown() {
 		shutdown(m_sock, SD_BOTH);
+	}
+
+	void Close() {
+		if (m_sock != INVALID_SOCKET)
+		{
+			closesocket(m_sock);
+			m_sock = INVALID_SOCKET;
+		}
 	}
 
 private:
