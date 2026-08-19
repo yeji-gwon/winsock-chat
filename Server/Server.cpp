@@ -179,7 +179,7 @@ void HandleClient(shared_ptr<ClientSocket> clientSocket)
 
         // 클라이언트 메시지를 보낸 사람 제외한 모두에게 전달
         string chatMsg = "[" + nickname + "] " + msg + "\n"; 
-        BroadCast(joinMsg, id);
+        BroadCast(chatMsg, id);
     }
 
     RemoveClient(id);
