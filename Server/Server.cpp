@@ -1,7 +1,7 @@
 ﻿#include "Config.h"
 #include "ListenSocket.h"
 
-bool g_running = true;
+atomic<bool> g_running = true;
 
 mutex g_coutMutex;              // 콘솔 출력 동기화
 
